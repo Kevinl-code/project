@@ -23,10 +23,6 @@ CHARTS_FOLDER = "static/charts"
 os.makedirs(CHARTS_FOLDER, exist_ok=True)
 
 @app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
 
@@ -34,52 +30,52 @@ def dashboard():
 def upload_file():
     try:
         file = request.files['file']
-        table_name = request.form['table_name']
+        filename = secure_filename(file.filename)
 
-        if not file or not table_name:
-            return jsonify({"success": False, "message": "Please provide both file and table name."}), 400
+        if not file:
+            return jsonify({"success": False, "message": "No file uploaded."}), 400
+
+        # 🔹 Mapping file names to pre-existing SQLite tables
+        table_mapping = {
+            "PS1.xlsx": "sheet1",
+            "PS2.xlsx": "sheet2",
+            "PS3.xlsx": "sheet3"
+        }
+
+        table_name = table_mapping.get(filename)
+
+        if not table_name:
+            return jsonify({"success": False, "message": "Invalid file name. Use PS1.xlsx, PS2.xlsx, or PS3.xlsx."}), 400
 
         df = pd.read_excel(file)
-        schema = {}
-        check_constraints = {}
 
-        for col in df.columns:
-            dtype = str(df[col].dtype)
-            if dtype.startswith("int"):
-                schema[col] = "INT"
-            elif dtype.startswith("float"):
-                schema[col] = "REAL"
-            else:
-                schema[col] = "TEXT"
-
-            unique_values = df[col].dropna().unique()
-            if len(unique_values) <= 10:
-                check_constraints[col] = [str(val) for val in unique_values]
-
+        # 🔹 Connect to SQLite database
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
 
-        column_definitions = []
-        for col, dtype in schema.items():
-            if col in check_constraints:
-                allowed_values = "', '".join(val.replace("'", "''") for val in check_constraints[col])
-                column_definition = f'"{col}" {dtype} CHECK("{col}" IN (\'{allowed_values}\'))'
-            else:
-                column_definition = f'"{col}" {dtype}'
-            column_definitions.append(column_definition)
+        # 🔹 Ensure table exists
+        cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+        if not cursor.fetchone():
+            return jsonify({"success": False, "message": f"Table {table_name} does not exist."}), 400
 
-        create_table_sql = f'CREATE TABLE IF NOT EXISTS "{table_name}" ({", ".join(column_definitions)})'
-        cursor.execute(create_table_sql)
+        # 🔹 Insert only new data (Avoid Duplicates)
+        existing_data = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
+        new_data = df[~df.apply(tuple, axis=1).isin(existing_data.apply(tuple, axis=1))]
 
-        df.to_sql(table_name, conn, if_exists='append', index=False)
+        if new_data.empty:
+            return jsonify({"success": False, "message": "No new data to insert (duplicates skipped)."}), 200
+
+        # Append new data
+        new_data.to_sql(table_name, conn, if_exists='append', index=False)
 
         conn.commit()
         conn.close()
 
-        return jsonify({"success": True, "message": "Data imported successfully!"})
+        return jsonify({"success": True, "message": f"Data uploaded to {table_name} successfully!"})
 
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+
 
 @app.route('/get_tables', methods=['GET'])
 def get_tables():
