@@ -31,12 +31,22 @@ body {
         background-position: 200% 0;
     }
 }
-
+.header-card {
+    background: linear-gradient(135deg, #a24f0692, #e77026);
+    color: white;
+    text-align: center;
+    width: 80%;
+    max-width: 1200px;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    font-family: Arial, sans-serif;
+}
 .front-page h1 {
     animation: float 3s ease-in-out infinite, glitter 1.5s linear infinite; /* Adds the floating and glittering effect */
     text-align: center;
     font-size: 2.5rem; /* Adjust the size as needed */
-    color: #333; /* Text color */
+    color: rgb(192, 82, 141); /* Text color */
     background: linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb, #a6c1ee); /* Gradient for glitter */
     background-size: 400% 400%; /* Larger background for a shimmering effect */
     -webkit-background-clip: text; /* Clips the background to the text */
