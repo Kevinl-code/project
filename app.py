@@ -63,7 +63,7 @@ def upload_file():
         new_data = df[~df.apply(tuple, axis=1).isin(existing_data.apply(tuple, axis=1))]
 
         if new_data.empty:
-            return jsonify({"success": False, "message": "No new data to insert (duplicates skipped)."}), 200
+            return jsonify({"success": False, "message": "No new data to insert."}), 200
 
         # Append new data
         new_data.to_sql(table_name, conn, if_exists='append', index=False)
@@ -82,12 +82,17 @@ def get_tables():
     try:
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'AND name NOT LIKE 'sqlite_sequence';")
         tables = [row[0] for row in cursor.fetchall()]
         conn.close()
         return jsonify({"success": True, "tables": tables})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/get_tables', methods=['GET'])
+def fetch_tables():
+    tables = get_tables()
+    return jsonify({"success": True, "tables": tables})
 
 @app.route('/get_columns', methods=['POST'])
 def get_columns():

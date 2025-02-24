@@ -1,0 +1,311 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+     <link rel="stylesheet" href="/static/styles.css">
+     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <center><header class="header-card" style="
+        padding-left: 300px;
+        width: 1200px;
+    ">
+            <h1 style="
+        width: 576px;
+        margin-left: 250px;
+    ">DATA VIZ IN RECENT TRENDS OF CS</h1>
+        </header></center>
+        <div class="sidebar" style="display: flex;width: 200px;right: 0px;padding-left: 9px;">
+        <br>
+        <a href="#" onclick="showContent('import')">Import Data</a>
+        <a href="#" onclick="showContent('category')">Category</a>
+        <a href="#" onclick="showContent('charts')">Charts</a>
+        <a href="#" onclick="showContent('export')">Export</a>
+    </div>
+
+    <!-- Content -->
+    <div class="content" id="import-content" style="display: none;">
+        <h2>Import Data</h2>
+        <input type="file" accept=".xlsx" id="file-uploader" style="width: 321.6px;">
+        <button id="import-data-btn">Import Data</button>
+
+        <!-- Hidden until "Import Data" is clicked -->
+        <div id="table-name-container" style="display: none; margin-top: 20px;">
+            <input type="text" id="table-name" placeholder="Enter table name" style="
+    width: 321.6px;
+">
+            <button id="start-import-btn">Start Import</button>
+        </div>
+    </div>
+
+    <div class="content" id="category-content" style="display: none;">
+        <h2>Category</h2>
+        
+        <!-- Table Selection Dropdown -->
+        <label for="table-dropdown">Select Table:</label>
+        <select id="table-dropdown" style="width: 321.6px; margin-top: 10px;" onchange="populateColumns()"><option value="sheet1">sheet1</option><option value="sheet2">sheet2</option><option value="sheet3">sheet3</option></select>
+        <br><br>
+        <!-- Year Selection (Dropdown Checkbox) -->
+        <label for="year-dropdown">Select Year:</label>
+        <select id="year-dropdown" style="width: 321.6px; margin-top: 10px;"><option value="">Select Year (Year)</option><option value="2023-24">2023-24</option></select>
+        
+        <br><br>
+        <!-- Chart Type Dropdown -->
+        <label for="chart-type">Chart Type:</label>
+        <select id="chart-type" style="width: 321.6px; margin-top: 10px;">
+            <option value="bar">Bar</option>
+            <option value="line">Line</option>
+            <option value="pie">Pie</option>
+        </select>
+        <br><br>
+        <!-- X-Axis Dropdown -->
+        <label for="x-axis">Select X Axis:</label>
+        <select id="x-axis" style="width: 321.6px; margin-top: 10px;"><option value="Year">Year</option><option value="Name_of_the_Faculty">Name_of_the_Faculty</option><option value="Title_of_the_Talk" disabled="">Title_of_the_Talk</option><option value="Nature">Nature</option><option value="Type_of_Programme">Type_of_Programme</option><option value="Title_of_the_Seminar">Title_of_the_Seminar</option><option value="Institution_and_Place">Institution_and_Place</option><option value="Date">Date</option></select>
+        <br><br>
+        <!-- Y-Axis Dropdown -->
+        <label for="y-axis">Select Y Axis:</label>
+        <select id="y-axis" style="width: 321.6px; margin-top: 10px;"><option value="Year">Year</option><option value="Name_of_the_Faculty" disabled="">Name_of_the_Faculty</option><option value="Title_of_the_Talk">Title_of_the_Talk</option><option value="Nature">Nature</option><option value="Type_of_Programme">Type_of_Programme</option><option value="Title_of_the_Seminar">Title_of_the_Seminar</option><option value="Institution_and_Place">Institution_and_Place</option><option value="Date">Date</option></select>
+        <br><br>
+        <!-- Color Picker -->
+        <label for="color-picker">Pick a Color:</label>
+        <input type="color" id="color-picker" value="" style="margin-top: 10px;">
+        <br><br>
+        <!-- Grid Checkbox -->
+        <label for="grid-toggle">Show Grid:</label>
+        <input type="checkbox" id="grid-toggle" checked="">
+        <br>
+        <!-- Get Started Button -->
+        <button id="get-started" style="margin-top: 20px;" onclick="navigateToCharts()">Get Started</button>
+    </div>
+    
+    <div class="content" id="charts-content" style="display: none;">
+        <!-- <h2>Generated Chart</h2> -->
+        <img id="chart-image" src="/static/charts/chart.png" alt="Generated Chart" style="max-width: 50%;">
+        <button id="export-chart-btn" onclick="navigateToExport()" style=" background-color: black; color: white; padding: 3px 5px; border-radius: 20px;">Export Chart</button>
+
+
+    </div>
+    <div class="content" id="export-content" style="display: none;">
+        <h2>Export</h2>
+        <form id="exportForm">
+            <label for="export_type" style="font-size: larger;">Select Export Type:</label>
+            <select name="export_type" id="export_type" required style="height: 36.6px; width: 221.6px;">
+                <option value="PDF">PDF</option>
+                <option value="PNG">PNG</option>
+            </select>
+            <br><br>
+            <label for="file_name" style="font-size: larger;">Enter File Name (without extension):</label>
+            <input type="text" name="file_name" id="file_name" required placeholder="Enter file name" style="width: 221.6px; height: 36.6px;">
+            <br><br>
+            <label for="file_location">Select Folder:</label>
+            <input type="hidden" name="file_location" id="file_location">
+            <button type="button" onclick="selectFolder()">Select Folder</button>
+            <span id="selected-folder"></span>
+            <br><br>
+            <button type="submit">Save Export</button>
+        </form>
+    </div>
+<script>
+    document.querySelector('.sidebar').style.display = 'flex';
+document.querySelector('.content').style.display = 'block';
+
+// Function to show specific content
+function showContent(page) {
+    const contents = document.querySelectorAll('.content');
+    contents.forEach(content => content.style.display = 'none');
+    document.getElementById(`${page}-content`).style.display = 'block';
+    if (page === 'category') {
+        populateTableDropdown();
+    }
+}
+
+// Show "Import Data" by default
+window.onload = () => showContent('import');
+
+// Import Data Button Click Event
+document.getElementById('import-data-btn').addEventListener('click', () => {
+    const fileUploader = document.getElementById('file-uploader');
+    if (!fileUploader.files.length) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No File Selected',
+            text: 'Please upload an XLSX file first.',
+        });
+        return;
+    }
+    document.getElementById('table-name-container').style.display = 'block';
+});
+
+// Start Import Button Click Event
+document.getElementById('start-import-btn').addEventListener('click', async () => {
+    const tableName = document.getElementById('table-name').value.trim();
+    const file = document.getElementById('file-uploader').files[0];
+
+    if (!tableName || !file) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Missing Data',
+            text: 'Please provide both file and table name.',
+        });
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('table_name', tableName);
+
+    try {
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Import Successful!',
+                text: result.message,
+            }).then(() => showContent('category')); // Navigate to Category page after success
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Import Failed',
+                text: result.message,
+            });
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred while importing data.',
+        });
+    }
+});
+
+// Function to populate the table dropdown
+async function populateTableDropdown() {
+    const dropdown = document.getElementById('table-dropdown');
+    dropdown.innerHTML = ''; // Clear existing options
+    try {
+        const response = await fetch('/get_tables');
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const result = await response.json();
+        console.log('Fetched tables:', result); 
+
+        if (result.success) {
+            const tables = result.tables;
+            dropdown.innerHTML = tables.length === 0 ? '<option value="">No tables available</option>' :
+                tables.map(table => `<option value="${table}">${table}</option>`).join('');
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: result.message,
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching table names:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred while fetching table names.',
+        });
+    }
+}
+
+// Function to navigate to Charts and generate the chart
+async function navigateToCharts() {
+    const tableName = document.getElementById('table-dropdown').value;
+    const year = document.getElementById('year-dropdown').value;
+    const chartType = document.getElementById('chart-type').value;
+    const xAxis = document.getElementById('x-axis').value;
+    const yAxis = document.getElementById('y-axis').value;
+    const color = document.getElementById('color-picker').value;
+    const showGrid = document.getElementById('grid-toggle').checked;
+
+    if (!tableName || !xAxis || !yAxis) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Missing Data',
+            text: "Please select table, X-axis, and Y-axis before generating the chart.",
+        });
+        return;
+    }
+
+    try {
+        const response = await fetch('/generate_chart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                table_name: tableName,
+                year: year,
+                chart_type: chartType,
+                x_axis: xAxis,
+                y_axis: yAxis,
+                color: color,
+                show_grid: showGrid
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            document.getElementById('chart-image').src = result.chart_url;
+            showContent('charts');
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Chart Error',
+                text: result.message,
+            });
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: "Error generating chart.",
+        });
+    }
+}
+
+// Export Form Submission
+document.getElementById('exportForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    try {
+        const response = await fetch('/export', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Export Successful!',
+                text: `Saved at: ${result.location}`,
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Export Failed',
+                text: result.message,
+            });
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred while exporting the chart.',
+        });
+        console.error(error);
+    }
+});
+</script>
+</body>
+</html>

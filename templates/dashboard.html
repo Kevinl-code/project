@@ -3,8 +3,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
      <link rel="stylesheet" href="/static/styles.css">
+<style>
+        .popup {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .popup-content {
+            position: relative;
+        }
+    
+        .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+</style>
 </head>
 <body>
+    <!-- Popup Modal -->
+<div id="custom-popup" class="popup">
+    <div class="popup-content">
+        <span class="close-btn">×</span>
+        <p id="popup-message"></p>
+    </div>
+</div>
     <center><header class="header-card" style="
         padding-left: 300px;
         width: 1200px;
@@ -14,7 +49,7 @@
         margin-left: 250px;
     ">DATA VIZ IN RECENT TRENDS OF CS</h1>
         </header></center>
-    <div class="sidebar" style="display: flex;width: 200px;right: 0px;padding-left: 9px;">
+        <div class="sidebar" style="display: flex;width: 200px;right: 0px;padding-left: 9px;">
         <br>
         <a href="#" onclick="showContent('import')">Import Data</a>
         <a href="#" onclick="showContent('category')">Category</a>
@@ -37,21 +72,22 @@
         </div>
     </div>
 
-    <div class="content" id="category-content" style="display: none;">
+    <div class="content" id="category-content" style="display: block;">
         <h2>Category</h2>
         
         <!-- Table Selection Dropdown -->
         <label for="table-dropdown">Select Table:</label>
-        <select id="table-dropdown" style="width: 321.6px; margin-top: 10px;" onchange="populateColumns()"><option value="sheet1">sheet1</option><option value="sheet2">sheet2</option><option value="sheet3">sheet3</option></select>
+        <select id="table-dropdown" style="width: 321.6px; margin-top: 10px;" onchange="populateColumns()"></select>
         <br><br>
         <!-- Year Selection (Dropdown Checkbox) -->
         <label for="year-dropdown">Select Year:</label>
-        <select id="year-dropdown" style="width: 321.6px; margin-top: 10px;"><option value="">Select Year (Year)</option><option value="2023-24">2023-24</option></select>
+        <select id="year-dropdown" style="width: 321.6px; margin-top: 10px;"><option value="">Select Year</option><option value="2023-24">2023-24</option></select>
         
         <br><br>
         <!-- Chart Type Dropdown -->
         <label for="chart-type">Chart Type:</label>
         <select id="chart-type" style="width: 321.6px; margin-top: 10px;">
+            <option value="Select chart type">Select Chart Type</option>
             <option value="bar">Bar</option>
             <option value="line">Line</option>
             <option value="pie">Pie</option>
@@ -59,11 +95,11 @@
         <br><br>
         <!-- X-Axis Dropdown -->
         <label for="x-axis">Select X Axis:</label>
-        <select id="x-axis" style="width: 321.6px; margin-top: 10px;"><option value="Year">Year</option><option value="Name_of_the_Faculty">Name_of_the_Faculty</option><option value="Title_of_the_Talk" disabled="">Title_of_the_Talk</option><option value="Nature">Nature</option><option value="Type_of_Programme">Type_of_Programme</option><option value="Title_of_the_Seminar">Title_of_the_Seminar</option><option value="Institution_and_Place">Institution_and_Place</option><option value="Date">Date</option></select>
+        <select id="x-axis" style="width: 321.6px; margin-top: 10px;"><option value="Select X Axis">Select X Axis</option><option value="Year">Year</option><option value="Name_of_the_Faculty">Name_of_the_Faculty</option><option value="Title_of_the_Talk" disabled="">Title_of_the_Talk</option><option value="Nature">Nature</option><option value="Type_of_Programme">Type_of_Programme</option><option value="Title_of_the_Seminar">Title_of_the_Seminar</option><option value="Institution_and_Place">Institution_and_Place</option><option value="Date">Date</option></select>
         <br><br>
         <!-- Y-Axis Dropdown -->
         <label for="y-axis">Select Y Axis:</label>
-        <select id="y-axis" style="width: 321.6px; margin-top: 10px;"><option value="Year">Year</option><option value="Name_of_the_Faculty" disabled="">Name_of_the_Faculty</option><option value="Title_of_the_Talk">Title_of_the_Talk</option><option value="Nature">Nature</option><option value="Type_of_Programme">Type_of_Programme</option><option value="Title_of_the_Seminar">Title_of_the_Seminar</option><option value="Institution_and_Place">Institution_and_Place</option><option value="Date">Date</option></select>
+        <select id="y-axis" style="width: 321.6px; margin-top: 10px;"><option value="Select Y Axis">Select Y Axis</option><option value="Year">Year</option><option value="Name_of_the_Faculty" disabled="">Name_of_the_Faculty</option><option value="Title_of_the_Talk">Title_of_the_Talk</option><option value="Nature">Nature</option><option value="Type_of_Programme">Type_of_Programme</option><option value="Title_of_the_Seminar">Title_of_the_Seminar</option><option value="Institution_and_Place">Institution_and_Place</option><option value="Date">Date</option></select>
         <br><br>
         <!-- Color Picker -->
         <label for="color-picker">Pick a Color:</label>
@@ -78,23 +114,22 @@
     </div>
     
     <div class="content" id="charts-content" style="display: none;">
-        <!-- <h2>Generated Chart</h2> -->
-        <img id="chart-image" src="/static/charts/chart.png" alt="Generated Chart" style="max-width: 50%;">
-        <button id="export-chart-btn" onclick="navigateToExport()" style=" background-color: black; color: white; padding: 3px 5px; border-radius: 20px;">Export Chart</button>
+    <h2>Generated Chart</h2>
+    <img id="chart-image" src="" alt="Generated Chart" style="max-width: 100%;">
+        <button id="export-chart-btn" onclick="navigateToExport()" style=" position: absolute; bottom: 0; left: 50%; margin:" 30px="" 0px"="">Export Chart</button>
 
-
-    </div>
+        </div>
     <div class="content" id="export-content" style="display: none;">
         <h2>Export</h2>
         <form id="exportForm">
             <label for="export_type" style="font-size: larger;">Select Export Type:</label>
-            <select name="export_type" id="export_type" required style="height: 36.6px; width: 221.6px;">
+            <select name="export_type" id="export_type" required="" style="height: 36.6px; width: 221.6px;">
                 <option value="PDF">PDF</option>
                 <option value="PNG">PNG</option>
             </select>
             <br><br>
-            <label for="file_name" style="font-size: larger;">Enter File Name (without extension):</label>
-            <input type="text" name="file_name" id="file_name" required placeholder="Enter file name" style="width: 221.6px; height: 36.6px;">
+            <label for="file_name" style="font-size: larger;">Enter File Name :</label>
+            <input type="text" name="file_name" id="file_name" required="" placeholder="Enter file name" style="width: 221.6px; height: 36.6px;">
             <br><br>
             <label for="file_location">Select Folder:</label>
             <input type="hidden" name="file_location" id="file_location">
@@ -109,6 +144,30 @@
       // Show sidebar and content when the page loads
 document.querySelector('.sidebar').style.display = 'flex';
 document.querySelector('.content').style.display = 'block';
+
+function showPopup(message) {
+    const popup = document.getElementById('custom-popup');
+    document.getElementById('popup-message').textContent = message;
+    popup.style.display = 'block';
+
+    // Auto-close popup after 3 seconds
+    setTimeout(() => {
+        popup.style.display = 'none';
+    }, 500);
+}
+
+// Close popup when clicking the close button
+document.querySelector('.close-btn').addEventListener('click', function() {
+    document.getElementById('custom-popup').style.display = 'none';
+});
+
+// Close popup when clicking outside of it
+window.addEventListener('click', function(event) {
+    const popup = document.getElementById('custom-popup');
+    if (event.target === popup) {
+        popup.style.display = 'none';
+    }
+});
 
 // Function to show specific content
 function showContent(page) {
@@ -127,7 +186,7 @@ window.onload = () => showContent('import');
 document.getElementById('import-data-btn').addEventListener('click', () => {
     const fileUploader = document.getElementById('file-uploader');
     if (!fileUploader.files.length) {
-        alert('Please upload an XLSX file first.');
+        showPopup('Please upload .xlsx file');
         return;
     }
     document.getElementById('table-name-container').style.display = 'block';
@@ -139,7 +198,7 @@ document.getElementById('start-import-btn').addEventListener('click', async () =
     const file = document.getElementById('file-uploader').files[0];
 
     if (!tableName || !file) {
-        alert('Please provide both file and table name.');
+        showPopup('Please enter table name.');
         return;
     }
 
@@ -156,13 +215,13 @@ document.getElementById('start-import-btn').addEventListener('click', async () =
         const result = await response.json();
 
         if (result.success) {
-            alert(result.message); // Show success dialog
+            showPopup(result.message); // Show success dialog
             showContent('category'); // Navigate to Category page
         } else {
-            alert(result.message); // Show error message
+            showPopup(result.message); // Show error message
         }
     } catch (error) {
-        alert('An error occurred while importing data.');
+        showPopup('An error occurred while importing data.');
     }
 });
 
@@ -172,13 +231,13 @@ async function populateTableDropdown() {
     dropdown.innerHTML = ''; // Clear existing options
     try {
         const response = await fetch('/get_tables');
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
         const result = await response.json();
-        console.log('Fetched tables:', result); // Log the fetched table names for debugging
+        console.log('Fetched tables:', result); // Debugging
+
         if (result.success) {
-            const tables = result.tables;
+            const tables = result.tables.filter(table => table !== 'sqlite_sequence'); // Remove sqlite_sequence
             if (tables.length === 0) {
                 dropdown.innerHTML = '<option value="">No tables available</option>';
             } else {
@@ -190,11 +249,11 @@ async function populateTableDropdown() {
                 });
             }
         } else {
-            alert(result.message); // Show error message from backend
+            showPopup(result.message);
         }
     } catch (error) {
         console.error('Error fetching table names:', error);
-        alert('An error occurred while fetching table names.');
+        showPopup('An error occurred while fetching table names.');
     }
 }
 
@@ -238,10 +297,10 @@ async function populateColumns() {
                 });
             }
         } else {
-            alert(result.message);
+            showPopup(result.message);
         }
     } catch (error) {
-        alert('Error fetching columns.');
+        showPopup('Error fetching columns.');
     }
 }
 
@@ -290,7 +349,7 @@ async function navigateToCharts() {
     const showGrid = document.getElementById('grid-toggle').checked;
 
     if (!tableName || !xAxis || !yAxis) {
-        alert("Please select table, X-axis, and Y-axis before generating the chart.");
+        showPopup("Please select table, X-axis, and Y-axis before generating the chart.");
         return;
     }
 
@@ -315,10 +374,10 @@ async function navigateToCharts() {
             document.getElementById('chart-image').src = result.chart_url;
             showContent('charts');
         } else {
-            alert(result.message);
+            showPopup(result.message);
         }
     } catch (error) {
-        alert("Error generating chart.");
+        showPopup("Error generating chart.");
     }
 }
 
@@ -346,12 +405,12 @@ function navigateToExport() {
                     document.getElementById('file_location').value = data.folder_path;
                     document.getElementById('selected-folder').innerText = data.folder_path;
                 } else {
-                    alert(data.error || "No folder selected.");
+                    showPopup(data.error || "No folder selected.");
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("An error occurred while selecting a folder.");
+                showPopup("An error occurred while selecting a folder.");
             });
     }
 
@@ -368,16 +427,16 @@ function navigateToExport() {
         const result = await response.json();
 
         if (result.success) {
-            alert(`Export Successful!\nSaved at: ${result.location}`);
+            showPopup(`Export Successful!\nSaved at: ${result.location}`);
         } else {
-            alert(`Export Failed: ${result.message}`);
+            showPopup(`Export Failed: ${result.message}`);
         }
     } catch (error) {
-        alert('An error occurred while exporting the chart.');
+        showPopup('An error occurred while exporting the chart.');
         console.error(error);
     }
 });
 
 </script>
-</body>
-</html>
+
+</body></html>

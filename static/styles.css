@@ -80,7 +80,6 @@ body {
     box-shadow: 0 0 20px 5px rgba(255, 140, 0, 0.7); /* Glowing effect */
     text-shadow: 0 0 10px rgba(255, 140, 0, 0.7); /* Glowing effect on text */
 }
-
 /* Sidebar Styles */
 .sidebar {
     position: fixed;
