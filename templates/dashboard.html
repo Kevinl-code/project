@@ -18,17 +18,40 @@
             border-radius: 10px;
             text-align: center;
         }
-        
+
         .popup-content {
             position: relative;
         }
-    
+
         .close-btn {
             position: absolute;
             top: 5px;
             right: 10px;
             cursor: pointer;
             font-size: 18px;
+        }
+/* .dropdown change  */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 150px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            z-index: 1;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content label {
+            display: block;
         }
 </style>
 </head>
@@ -47,7 +70,7 @@
             <h1 style="
         width: 576px;
         margin-left: 250px;
-    ">DATA VIZ IN RECENT TRENDS OF CS</h1>
+    ">Data Visualisation of Academic Audit Data</h1>
         </header></center>
         <div class="sidebar" style="display: flex;width: 200px;right: 0px;padding-left: 9px;">
         <br>
@@ -74,15 +97,28 @@
 
     <div class="content" id="category-content" style="display: block;">
         <h2>Category</h2>
-        
+
         <!-- Table Selection Dropdown -->
         <label for="table-dropdown">Select Table:</label>
         <select id="table-dropdown" style="width: 321.6px; margin-top: 10px;" onchange="populateColumns()"></select>
         <br><br>
         <!-- Year Selection (Dropdown Checkbox) -->
+        <!-- <label for="year-dropdown">Select Year:</label> -->
+        <!-- <select id="year-dropdown" style="width: 321.6px; margin-top: 10px;"><option value="">Select Year</option><option value="2023-24">2023-24</option></select> -->
+        <!-- <p id="year-dropdown"></p> -->
+
+
         <label for="year-dropdown">Select Year:</label>
-        <select id="year-dropdown" style="width: 321.6px; margin-top: 10px;"><option value="">Select Year</option><option value="2023-24">2023-24</option></select>
-        
+        <div class="dropdown">
+            <button>Select Year</button>
+            <div class="dropdown-content">
+                <div class="dropdown-content" id="year-dropdown">
+                    <!-- Checkboxes will be added dynamically here -->
+                </div>
+
+            </div>
+        </div>
+
         <br><br>
         <!-- Chart Type Dropdown -->
         <label for="chart-type">Chart Type:</label>
@@ -110,20 +146,20 @@
         <input type="checkbox" id="grid-toggle" checked="">
         <br>
         <!-- Get Started Button -->
-        <button id="get-started" style="margin-top: 20px;" onclick="navigateToCharts()">Get Started</button>
+        <button id="get-started" style="margin-top: 20px;" onclick="navigateToCharts()">Generate Chart</button>
     </div>
-    
+
     <div class="content" id="charts-content" style="display: none;">
     <h2>Generated Chart</h2>
-    <img id="chart-image" src="" alt="Generated Chart" style="max-width: 100%;">
-        <button id="export-chart-btn" onclick="navigateToExport()" style=" position: absolute; bottom: 0; left: 50%; margin:" 30px="" 0px"="">Export Chart</button>
-
+    <img id="chart-image" src="/static/charts\chart.png" alt="Generated Chart" style="max-width: 100%;height: 200px;">
+    <button id="export-chart-btn" onclick="navigateToExport()" style="position: absolute;bottom: 0;left: 50%;top: 900px;padding-bottom: 30px;" 30px="" 0px="">Export Chart</button>
         </div>
     <div class="content" id="export-content" style="display: none;">
         <h2>Export</h2>
         <form id="exportForm">
             <label for="export_type" style="font-size: larger;">Select Export Type:</label>
-            <select name="export_type" id="export_type" required="" style="height: 36.6px; width: 221.6px;">
+            <select name="export_type" id="export_type" required="" style="height: 38.6px; width: 221.6px;">
+                <option value="Select Export Type">Select Export Type</option>
                 <option value="PDF">PDF</option>
                 <option value="PNG">PNG</option>
             </select>
@@ -153,7 +189,7 @@ function showPopup(message) {
     // Auto-close popup after 3 seconds
     setTimeout(() => {
         popup.style.display = 'none';
-    }, 500);
+    }, 1000);
 }
 
 // Close popup when clicking the close button
@@ -261,8 +297,10 @@ async function populateColumns() {
     const tableName = document.getElementById('table-dropdown').value;
     const xAxisDropdown = document.getElementById('x-axis');
     const yAxisDropdown = document.getElementById('y-axis');
-    const yearDropdown = document.getElementById('year-dropdown');
+    const yearDropdown = document.getElementById('year-dropdown'); // Container for checkboxes
+    const yearButton = document.getElementById('year-button'); // Button to show selected years
 
+    // Clear previous content
     xAxisDropdown.innerHTML = '';
     yAxisDropdown.innerHTML = '';
     yearDropdown.innerHTML = '';
@@ -271,37 +309,50 @@ async function populateColumns() {
         const result = await fetchColumns(tableName);
 
         if (result.success) {
+            // Populate X and Y axis dropdowns
             result.columns.forEach(col => {
-                const optionX = document.createElement('option');
-                optionX.value = col;
-                optionX.textContent = col;
-                xAxisDropdown.appendChild(optionX);
-
-                const optionY = document.createElement('option');
-                optionY.value = col;
-                optionY.textContent = col;
-                yAxisDropdown.appendChild(optionY);
+                xAxisDropdown.appendChild(new Option(col, col));
+                yAxisDropdown.appendChild(new Option(col, col));
             });
 
+            // Populate year checkboxes
             if (result.year_column) {
-                const allYearsOption = document.createElement('option');
-                allYearsOption.value = '';
-                allYearsOption.textContent = `Select Year (${result.year_column})`;
-                yearDropdown.appendChild(allYearsOption);
-
                 result.years.forEach(year => {
-                    const yearOption = document.createElement('option');
-                    yearOption.value = year;
-                    yearOption.textContent = year;
-                    yearDropdown.appendChild(yearOption);
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = year;
+                    checkbox.name = 'year';
+                    checkbox.id = `year-${year}`;
+                    checkbox.addEventListener('change', updateYearButtonText);
+
+                    const label = document.createElement('label');
+                    label.htmlFor = `year-${year}`;
+                    label.textContent = year;
+
+                    const yearDiv = document.createElement('div');
+                    yearDiv.classList.add('dropdown-item');
+                    yearDiv.appendChild(checkbox);
+                    yearDiv.appendChild(label);
+
+                    yearDropdown.appendChild(yearDiv);
                 });
             }
         } else {
-            showPopup(result.message);
+            showPopup(result.message || 'Failed to fetch columns.');
         }
     } catch (error) {
-        showPopup('Error fetching columns.');
+        console.error('Error fetching columns:', error);
+        showPopup('An error occurred while fetching columns. Please try again.');
     }
+}
+
+// Function to update button text based on selected years
+function updateYearButtonText() {
+    const selectedYears = Array.from(document.querySelectorAll('#year-dropdown input[type="checkbox"]:checked'))
+        .map(checkbox => checkbox.value)
+        .join(', ');
+
+    document.getElementById('year-button').textContent = selectedYears || 'Select Year';
 }
 
 // Prevent X-axis and Y-axis from being the same
@@ -388,7 +439,7 @@ document.getElementById('charts-content').innerHTML = `
         <button id="export-chart-btn" onclick="navigateToExport()" style=" position: absolute; bottom: 0; left: 50%; margin:" 30px 0px">Export Chart</button>
 
         `;
-        
+
         // <button id="export-chart-btn" onclick="navigateToExport()" >Export Chart</button>
 
 function navigateToExport() {
