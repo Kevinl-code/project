@@ -109,15 +109,12 @@
 
 
         <label for="year-dropdown">Select Year:</label>
-        <div class="dropdown">
-            <button>Select Year</button>
-            <div class="dropdown-content">
-                <div class="dropdown-content" id="year-dropdown">
-                    <!-- Checkboxes will be added dynamically here -->
-                </div>
-
-            </div>
-        </div>
+<div class="dropdown">
+    <button id="year-button">Select Year</button>
+    <div class="dropdown-content" id="year-dropdown">
+        <!-- Checkboxes will be added dynamically here -->
+    </div>
+</div>
 
         <br><br>
         <!-- Chart Type Dropdown -->
@@ -138,8 +135,11 @@
         <select id="y-axis" style="width: 321.6px; margin-top: 10px;"><option value="Select Y Axis">Select Y Axis</option><option value="Year">Year</option><option value="Name_of_the_Faculty" disabled="">Name_of_the_Faculty</option><option value="Title_of_the_Talk">Title_of_the_Talk</option><option value="Nature">Nature</option><option value="Type_of_Programme">Type_of_Programme</option><option value="Title_of_the_Seminar">Title_of_the_Seminar</option><option value="Institution_and_Place">Institution_and_Place</option><option value="Date">Date</option></select>
         <br><br>
         <!-- Color Picker -->
-        <label for="color-picker">Pick a Color:</label>
-        <input type="color" id="color-picker" value="" style="margin-top: 10px;">
+        <label for="multi-color-picker">Pick Colors:</label>
+        <div id="color-container">
+            <input type="color" class="color-picker" value="#ff0000">
+        </div>
+        <button type="button" onclick="addColor()">Add Another Color</button>
         <br><br>
         <!-- Grid Checkbox -->
         <label for="grid-toggle">Show Grid:</label>
@@ -388,19 +388,32 @@ async function fetchColumns(tableName) {
     console.log('Columns:', result);
     return result;
 }
+// Function to add more color pickers
+function addColor() {
+    const colorContainer = document.getElementById("color-container");
+    const newColorInput = document.createElement("input");
+    newColorInput.type = "color";
+    newColorInput.classList.add("color-picker");
+    colorContainer.appendChild(newColorInput);
+}
 
-// Function to navigate to Charts and generate the chart
+// Function to get selected colors and pass them to the backend
 async function navigateToCharts() {
     const tableName = document.getElementById('table-dropdown').value;
-    const year = document.getElementById('year-dropdown').value;
+    const selectedYears = Array.from(document.querySelectorAll('#year-dropdown input[type="checkbox"]:checked'))
+        .map(checkbox => checkbox.value);
+
     const chartType = document.getElementById('chart-type').value;
     const xAxis = document.getElementById('x-axis').value;
     const yAxis = document.getElementById('y-axis').value;
-    const color = document.getElementById('color-picker').value;
     const showGrid = document.getElementById('grid-toggle').checked;
 
-    if (!tableName || !xAxis || !yAxis) {
-        showPopup("Please select table, X-axis, and Y-axis before generating the chart.");
+    // Get all selected colors
+    const colors = Array.from(document.querySelectorAll('.color-picker'))
+                        .map(input => input.value);
+
+    if (!tableName || !xAxis || !yAxis || selectedYears.length === 0) {
+        showPopup("Please select table, X-axis, Y-axis, and at least one year before generating the chart.");
         return;
     }
 
@@ -410,11 +423,11 @@ async function navigateToCharts() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 table_name: tableName,
-                year: year,
+                years: selectedYears,  
                 chart_type: chartType,
                 x_axis: xAxis,
                 y_axis: yAxis,
-                color: color,
+                colors: colors,  // Pass multiple colors
                 show_grid: showGrid
             })
         });
@@ -431,6 +444,7 @@ async function navigateToCharts() {
         showPopup("Error generating chart.");
     }
 }
+
 
 // Update "Charts" section to display the chart
 document.getElementById('charts-content').innerHTML = `
