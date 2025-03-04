@@ -8,7 +8,8 @@ import matplotlib
 import shutil
 import zipfile
 import subprocess
-from matplotlib.backends.backend_pdf import PdfPages  # Add this import
+from matplotlib.backends.backend_pdf import PdfPages
+import numpy as np   # Add this import
 # Use 'Agg' backend to prevent GUI-related errors
 matplotlib.use('Agg')
 app = Flask(__name__)
@@ -94,6 +95,7 @@ def get_columns():
         return jsonify({"success": True, "columns": columns, "year_column": year_column, "years": years})
     except Exception as e:
         return jsonify({"success": False, "message": f"Error fetching columns: {str(e)}"}), 500
+        
 @app.route('/generate_chart', methods=['POST'])
 def generate_chart():
     try:
@@ -103,9 +105,8 @@ def generate_chart():
         chart_type = data['chart_type']
         x_axis = data['x_axis']
         y_axis = data['y_axis']
-        color = data['color']
         show_grid = data.get('show_grid', True)
-        
+
         conn = sqlite3.connect(DATABASE_PATH)
         query = f"SELECT {x_axis}, {y_axis} FROM {table_name}"
         if year:
@@ -118,36 +119,48 @@ def generate_chart():
 
         df.dropna(subset=[x_axis, y_axis], inplace=True)
         df[x_axis] = df[x_axis].astype(str)
-        df[y_axis] = pd.to_numeric(df[y_axis], errors='coerce')
+        df[y_axis] = df[y_axis].astype(str)
+
         plt.figure(figsize=(10, 6))
-        
+
+        unique_labels = df[y_axis].unique()
+        colors = plt.cm.get_cmap("tab10", len(unique_labels)).colors  # Generate distinct colors
+        color_map = {label: colors[i] for i, label in enumerate(unique_labels)}
+
         if chart_type == "bar":
-            plt.bar(df[x_axis], df[y_axis], color=color)
-            for i, value in enumerate(df[y_axis]):
-                plt.text(i, value, str(value), ha='center', va='bottom')
-        
+            df_counts = df.groupby([x_axis, y_axis]).size().reset_index(name='count')
+            df_pivot = df_counts.pivot(index=x_axis, columns=y_axis, values='count').fillna(0)
+            ax = df_pivot.plot(kind='bar', color=[color_map[col] for col in df_pivot.columns], ax=plt.gca())
+            for container in ax.containers:
+                ax.bar_label(container, label_type='edge', fontsize=10)
+
         elif chart_type == "line":
-            plt.plot(df[x_axis], df[y_axis], marker='o', color=color)
-            for i, txt in enumerate(df[y_axis]):
-                plt.text(i, txt, str(txt), ha='center', va='bottom')
-        
+            df_counts = df.groupby([x_axis, y_axis]).size().reset_index(name='count')
+            df_pivot = df_counts.pivot(index=x_axis, columns=y_axis, values='count').fillna(0)
+            ax = df_pivot.plot(kind='line', marker='o', color=[color_map[col] for col in df_pivot.columns], ax=plt.gca())
+            for line in ax.lines:
+                for x, y, label in zip(line.get_xdata(), line.get_ydata(), df_pivot.index):
+                    ax.annotate(f'{label}: {int(y)}', (x, y), textcoords="offset points", xytext=(0, 5), ha='center', fontsize=10, fontweight='bold')
+
         elif chart_type == "pie":
-            wedges, texts, autotexts = plt.pie(df[y_axis], labels=df[x_axis], autopct='%1.1f%%', colors=[color])
-            for text, autotext in zip(texts, autotexts):
-                autotext.set_text(f"{autotext.get_text()}\n({df[y_axis].iloc[texts.index(text)]})")
-        
+            df_pie = df[y_axis].value_counts()
+            wedges, texts, autotexts = plt.pie(df_pie, labels=[f'{index}: {value}' for index, value in df_pie.items()], autopct=lambda p: f'{int(p*sum(df_pie)/100)}\n({p:.1f}%)', colors=[color_map[label] for label in df_pie.index])
+            for autotext in autotexts:
+                autotext.set_fontsize(10)
+                autotext.set_weight('bold')
+
         if show_grid:
             plt.grid(True)
         plt.xlabel(x_axis)
         plt.ylabel(y_axis)
-        
+
         chart_path = os.path.join(CHARTS_FOLDER, "chart.png")
         plt.savefig(chart_path)
         plt.close()
+
         return jsonify({"success": True, "chart_url": f"/{chart_path}"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
-
 
 @app.route('/export', methods=['POST'])
 def export_chart():
@@ -188,5 +201,6 @@ def select_folder():
             return jsonify({'folder_path': None, 'error': error_message})
     except Exception as e:
         return jsonify({'folder_path': None, 'error': str(e)})
+
 if __name__ == '__main__':
     app.run(debug=True, threaded=False)  # Disable threading to prevent socket errors
