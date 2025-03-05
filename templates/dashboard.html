@@ -423,7 +423,7 @@ async function navigateToCharts() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 table_name: tableName,
-                years: selectedYears,  
+                years: selectedYears,  // Pass array of years
                 chart_type: chartType,
                 x_axis: xAxis,
                 y_axis: yAxis,
